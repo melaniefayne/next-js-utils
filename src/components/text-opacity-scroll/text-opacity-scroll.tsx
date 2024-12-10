@@ -1,12 +1,14 @@
 import { motion, useScroll, useTransform, MotionValue } from 'framer-motion';
 import React, { CSSProperties, useRef } from 'react';
 import styles from './style.module.scss'
+import { useMediaQuery } from 'react-responsive';
 
 // ============================== Props
 interface AnimatedParagraphProps {
     paragraph: string;
-    animationMode: 'paragraph' | 'word' | 'character';
+    animationMode?: 'paragraph' | 'word' | 'character';
     txtColor?: string;
+    alignment?: 'left' | 'center' | 'right';
 }
 
 interface WordProps {
@@ -18,16 +20,35 @@ interface WordProps {
 
 // ============================== Components
 
-const AnimatedParagraph: React.FC<AnimatedParagraphProps> = ({ paragraph, animationMode, txtColor }) => {
+const AnimatedParagraph: React.FC<AnimatedParagraphProps> = ({
+    paragraph,
+    animationMode = 'word',
+    txtColor,
+    alignment = 'left',
+}) => {
     const container = useRef<HTMLDivElement>(null);
     const { scrollYProgress } = useScroll({
         target: container,
         offset: ['start 0.9', 'start 0.25'],
     });
-    const textStyle: CSSProperties = { color: txtColor };
+
+    const isSmallScreen = useMediaQuery({ query: '(max-width: 480px)' });
+    const isMediumScreen = useMediaQuery({ query: '(max-width: 768px)' });
+    const isLargeScreen = useMediaQuery({ query: '(max-width: 1024px)' });
+
+    let fontSize = '40px';
+    if (isSmallScreen) fontSize = '18px';
+    else if (isMediumScreen) fontSize = '24px';
+    else if (isLargeScreen) fontSize = '30px';
+
+
+    const textStyle: CSSProperties = {
+        color: txtColor,
+        fontSize,
+        textAlign: alignment,
+    };
 
     if (animationMode === 'paragraph') {
-        // Animate the entire paragraph
         const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
         return (
             <motion.p
@@ -43,7 +64,6 @@ const AnimatedParagraph: React.FC<AnimatedParagraphProps> = ({ paragraph, animat
     const words = paragraph.split(' ');
 
     if (animationMode === 'word') {
-        // Animate word-by-word
         return (
             <p ref={container} className={styles.paragraph} style={textStyle}>
                 {words.map((word, i) => {
@@ -60,7 +80,6 @@ const AnimatedParagraph: React.FC<AnimatedParagraphProps> = ({ paragraph, animat
     }
 
     if (animationMode === 'character') {
-        // Animate character-by-character
         return (
             <p ref={container} className={styles.paragraph} style={textStyle}>
                 {words.map((word, i) => {
@@ -87,7 +106,7 @@ const AnimatedParagraph: React.FC<AnimatedParagraphProps> = ({ paragraph, animat
         );
     }
 
-    return <p>{paragraph}</p>; 
+    return <p>{paragraph}</p>;
 };
 
 
@@ -95,7 +114,7 @@ const AnimatedWord: React.FC<WordProps> = ({ children, progress, range }) => {
     const opacity = useTransform(progress, range, [0, 1]);
     return (
         <span className={styles.word}>
-             <span className={styles.shadow}>{children}</span>
+            <span className={styles.shadow}>{children}</span>
             <motion.span style={{ opacity }}>{children}</motion.span>
         </span>
     );
@@ -105,7 +124,7 @@ const AnimatedCharacter: React.FC<WordProps> = ({ children, progress, range }) =
     const opacity = useTransform(progress, range, [0, 1]);
     return (
         <span className={styles.character}>
-             <span className={styles.shadow}>{children}</span>
+            <span className={styles.shadow}>{children}</span>
             <motion.span style={{ opacity }}>{children}</motion.span>
         </span>
     );
